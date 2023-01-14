@@ -11,6 +11,90 @@ from antimat import is_mat
 #Create bot
 bot = telebot.TeleBot(token)
 
+@bot.message_handler(commands=["sendtopodcast"])
+def send_pod(message):
+    if is_mod(message):
+        bot.send_message(message.from_user.id, "Отлично. Отправте айди статьи которую хотите отправить в подкаст:")
+        restat(message, "stp")
+    else:
+        bot.send_message(message.from_user.id, "Недостаточно прав")
+
+@bot.message_handler(commands=["del"])
+def del1(message):
+    if is_mod(message):
+        bot.send_message(message.from_user.id, "Отлично. Отправте айди статьи которую хотите удалить:")
+        restat(message, "del")
+    else:
+        bot.send_message(message.from_user.id, "Недостаточно прав")
+
+@bot.message_handler(commands=["veri"])
+def veri(message):
+    if is_mod(message):
+        bot.send_message(message.from_user.id, "Отлично. Отправте айди пользователя которого хотите верифнуть :")
+        restat(message, "veri")
+    else:
+        bot.send_message(message.from_user.id, "Недостаточно прав")
+
+@bot.message_handler(commands=["wfor"])
+def wread(message):
+    ids = []
+    try:
+        conn = sqlite3.connect(data)
+        cursor = conn.cursor()
+
+        count = cursor.execute("SELECT COUNT(*) FROM To_mod").fetchall()[0][0]
+
+        conn.commit()
+
+    except sqlite3.Error as error:
+        print("Error sql7: ", error)
+
+    finally:
+        if (conn):
+            conn.close()
+    print(count)
+    for i in range(1, count+1):
+        try:
+            conn = sqlite3.connect(data)
+            cursor = conn.cursor()
+
+            count = cursor.execute("SELECT status FROM To_mod WHERE id ='"+str(i)+"'").fetchall()
+            if len(count)==0:
+                break
+            conn.commit()
+
+        except sqlite3.Error as error:
+            print("Error sql7: ", error)
+
+        finally:
+            if (conn):
+                conn.close()
+        if count == "mod":
+            ids.append(i)
+    print(ids)
+    for i in ids:
+        try:
+            conn = sqlite3.connect(data)
+            cursor = conn.cursor()
+
+            id = i
+            for1 = cursor.execute("SELECT for FROM To_mod WHERE id ='"+str(i)+"'").fetchall()[0][0]
+            txt = cursor.execute("SELECT txt FROM To_mod WHERE id ='" + str(i) + "'").fetchall()[0][0]
+            user = cursor.execute("SELECT autor FROM To_mod WHERE id ='" + str(i) + "'").fetchall()[0][0]
+            print(id, for1, txt, user)
+
+            conn.commit()
+
+        except sqlite3.Error as error:
+            print("Error sql7: ", error)
+
+        finally:
+            if (conn):
+                conn.close()
+        if for1 == "veri":
+            bot.send_message(message.from_user.id,'id: '+str(id)+" Автор: "+ user+"""
+"""+txt)
+
 @bot.message_handler(commands=["rerules"])
 def rerules(message):
     if is_mod(message):
@@ -87,7 +171,7 @@ def wread(message):
 
 @bot.message_handler(commands=["sb"])
 def cb(message):
-    bot.send_message(message.from_user.id, "Отлично. Отправте нам ваш день рождения в формате ДД:ММ:ГГГГ (пример: 31.01.2000):")
+    bot.send_message(message.from_user.id, "Отлично. Отправте нам ваш день рождения в формате ДД:ММ (пример: 31.01):")
     restat(message, "cb")
 
 @bot.message_handler(commands=["new"])
@@ -206,7 +290,7 @@ def text_handl(message):
             conn = sqlite3.connect(data)
             cursor = conn.cursor()
 
-            cursor.execute("INSERT INTO To_mod (for, txt, status) VALUES ('veri', '"+str(message.text)+"', 'mod')")
+            cursor.execute("INSERT INTO To_mod (for, txt, status, autor) VALUES ('veri', '"+str(message.text)+"', 'mod', '"+str(message.from_user.id)+"')")
 
             conn.commit()
 
@@ -234,7 +318,64 @@ def text_handl(message):
                 conn.close()
         restat(message, "none")
         bot.send_message(message.from_user.id, "Ваша правка правил принята: " + get_rules())
+    elif what_st(message) == "veri":
+        try:
+            conn = sqlite3.connect(data)
+            cursor = conn.cursor()
 
+            cursor.execute("UPDATE users SET verif='1' WHERE us_id = '"+ message.text +"'")
+            conn.commit()
+
+        except sqlite3.Error as error:
+            print("Error sql7: ", error)
+
+        finally:
+            if (conn):
+                conn.close()
+        restat(message, "none")
+        try:
+            conn = sqlite3.connect(data)
+            cursor = conn.cursor()
+
+            cursor.execute("DELETE FROM To_mod WHERE autor = '"+ str(message.from_user.id) +"'")
+            conn.commit()
+
+        except sqlite3.Error as error:
+            print("Error sql7: ", error)
+
+        finally:
+            if (conn):
+                conn.close()
+    elif what_st(message) == "del":
+        try:
+            conn = sqlite3.connect(data)
+            cursor = conn.cursor()
+
+            cursor.execute("UPDATE txt SET status='ban' WHERE id = '"+ message.text +"'")
+            conn.commit()
+
+        except sqlite3.Error as error:
+            print("Error sql7: ", error)
+
+        finally:
+            if (conn):
+                conn.close()
+        restat(message, "none")
+    elif what_st(message) == "stp":
+        try:
+            conn = sqlite3.connect(data)
+            cursor = conn.cursor()
+
+            cursor.execute("INSERT INTO Podcast (type_task, txt_task, st_task, w_or_m) VALUES ('announcement', '"+str(message.text)+"', 'go', 'men')")
+            conn.commit()
+
+        except sqlite3.Error as error:
+            print("Error sql7: ", error)
+
+        finally:
+            if (conn):
+                conn.close()
+        restat(message, "none")
 
 
 
