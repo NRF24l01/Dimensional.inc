@@ -1,2 +1,2 @@
-token = "5957253277:AAExDCZEFv6HawExEmlPr07nRLLur78uibY"
+token = ""
 data = "data.db"
